@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.TestUtils.map;
+import static io.strimzi.test.k8s.BaseKubeClient.DEPLOYMENT;
+import static io.strimzi.test.k8s.BaseKubeClient.STATEFUL_SET;
 import static junit.framework.TestCase.assertTrue;
 import static matchers.Matchers.valueOfCmEquals;
 import static org.junit.Assert.assertEquals;
@@ -67,6 +69,10 @@ public class KafkaClusterTest {
 
     private static String zookeeperPodName(String clusterName, int podId) {
         return zookeeperStatefulSetName(clusterName) + "-" + podId;
+    }
+
+    private static String topicControllerDeploymentName(String clusterName) {
+        return clusterName + "-topic-controller";
     }
 
     @BeforeClass
@@ -252,5 +258,50 @@ public class KafkaClusterTest {
         assertThat(jsonString, valueOfCmEquals("KAFKA_DEFAULT_REPLICATION_FACTOR", "2"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "5"));
         assertThat(jsonString, valueOfCmEquals("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "5"));
+    }
+
+    @Test
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
+    public void testDeleteDeployments(){
+        // kafka cluster already deployed via annotation
+        String clusterName = "my-cluster";
+        String topicControllerName = topicControllerDeploymentName(clusterName);
+        String clusterControllerName = "strimzi-cluster-controller";
+        LOGGER.info("Running deleteDeployments with cluster {}", clusterName);
+
+
+        kubeClient.deleteByName(DEPLOYMENT, topicControllerName);
+        kubeClient.waitForResourceDeletion(DEPLOYMENT, topicControllerName);
+
+        // wait for reconciliation and check that deployment was recovered
+        kubeClient.waitForDeployment(topicControllerName);
+
+        kubeClient.deleteByName(DEPLOYMENT, clusterControllerName);
+        kubeClient.waitForResourceDeletion(DEPLOYMENT, clusterControllerName);
+
+        // wait for reconciliation and check that deployment was recovered
+        kubeClient.waitForDeployment(clusterControllerName);
+    }
+
+    @Test
+    @KafkaCluster(name = "my-cluster", kafkaNodes = 1)
+    public void testDeleteStatefulSets(){
+        // kafka cluster already deployed via annotation
+        String clusterName = "my-cluster";
+        String kafkaStatefulSetName = kafkaStatefulSetName(clusterName);
+        String zookeeperStatefulSetName = zookeeperStatefulSetName(clusterName);
+        LOGGER.info("Running deleteStatefulSets with cluster {}", clusterName);
+
+        kubeClient.deleteByName(STATEFUL_SET, kafkaStatefulSetName);
+        kubeClient.waitForResourceDeletion(STATEFUL_SET, kafkaStatefulSetName);
+
+        // wait for reconciliation and check that stateful set was recovered
+        kubeClient.waitForDeployment(kafkaStatefulSetName);
+
+        kubeClient.deleteByName(STATEFUL_SET, zookeeperStatefulSetName);
+        kubeClient.waitForResourceDeletion(STATEFUL_SET, zookeeperStatefulSetName);
+
+        // wait for reconciliation and check that stateful set was recovered
+        kubeClient.waitForDeployment(zookeeperStatefulSetName);
     }
 }

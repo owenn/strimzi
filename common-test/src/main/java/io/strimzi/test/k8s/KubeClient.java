@@ -34,6 +34,9 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     String defaultNamespace();
 
+    /** Deletes the resources by resource name. */
+    K deleteByName(String resourceType, String resourceName);
+
     String namespace(String namespace);
 
     boolean clientAvailable();
