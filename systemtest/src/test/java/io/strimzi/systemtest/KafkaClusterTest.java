@@ -76,6 +76,10 @@ public class KafkaClusterTest {
         return kafkaClusterName(clusterName) + "-metrics-config";
     }
 
+    private static String kafkaPVCName(String clusterName, int podId) {
+        return "data-" + kafkaClusterName(clusterName) + "-" + podId;
+    }
+
     // can be used as zookeeper stateful set or service names
     private static String zookeeperClusterName(String clusterName) {
         return clusterName + "-zookeeper";
@@ -93,16 +97,12 @@ public class KafkaClusterTest {
         return zookeeperClusterName(clusterName) + "-metrics-config";
     }
 
+    private static String zookeeperPVCName(String clusterName, int podId) {
+        return "data-" + zookeeperClusterName(clusterName) + "-" + podId;
+    }
+
     private static String topicControllerDeploymentName(String clusterName) {
         return clusterName + "-topic-controller";
-    }
-
-    private static String zookeeperPVCName(String clusterName, int podId) {
-        return "data-" + zookeeperStatefulSetName(clusterName) + "-" + podId;
-    }
-
-    private static String kafkaPVCName(String clusterName, int podId) {
-        return "data-" + kafkaStatefulSetName(clusterName) + "-" + podId;
     }
 
     @BeforeClass
